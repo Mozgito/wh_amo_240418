@@ -15,3 +15,5 @@
 /var/
 /vendor/
 ###< symfony/framework-bundle ###
+
+/data/

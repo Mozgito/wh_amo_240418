@@ -14,10 +14,11 @@ RUN apt-get update \
     libxpm-dev \
     libssl-dev \
     libbson-dev \
+    libmongoc-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-install -j$(nproc) zip
-
+RUN pecl install mongodb && docker-php-ext-enable mongodb
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer && chmod a+x /usr/bin/composer
 
 RUN apt-get clean
