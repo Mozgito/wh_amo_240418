@@ -22,12 +22,16 @@ class DataService
      */
     public function createDataInDB(string $entityType, int $entityId, array $data)
     {
-        $record = new DBData();
-        $record->setEntityId($entityId);
-        $record->setEntityType($entityType);
-        $record->setData(serialize($data));
-        $this->dm->persist($record);
-        $this->dm->flush();
+        $record = $this->dm->getRepository(DBData::class)
+            ->findBy(array('entityId' => $entityId, 'entityType' => $entityType));
+        if (empty($record)) {
+            $record = new DBData();
+            $record->setEntityId($entityId);
+            $record->setEntityType($entityType);
+            $record->setData(serialize($data));
+            $this->dm->persist($record);
+            $this->dm->flush();
+        }
     }
 
     /**
@@ -57,5 +61,69 @@ class DataService
         $record[0]->setData(serialize($data));
         $this->dm->persist($record[0]);
         $this->dm->flush();
+    }
+
+    /**
+     * @param array $newData
+     * @param array $oldData
+     * @return array
+     */
+    public function getDataDifference(array $newData, array $oldData)
+    {
+        $diff = [];
+        $skipFields = ['old_status_id', 'last_modified', 'updated_at', 'old_responsible_user_id', 'linked_leads_id'];
+
+        foreach ($newData as $newDataKey => $newDataValue) {
+            if (in_array($newDataKey, $skipFields)) {
+                continue;
+            }
+
+            if (isset($oldData[$newDataKey])) {
+                if ('tags' === $newDataKey) {
+                    $tags = array_udiff($newDataValue, $oldData['tags'], [$this, 'compareTags']);
+
+                    foreach ($tags as $tagKey => $tag) {
+                        $diff['tag' . $tagKey] = $tag['name'];
+                    }
+                } elseif ('custom_fields' === $newDataKey) {
+                    $customFields = array_udiff($newDataValue, $oldData['custom_fields'], [$this, 'compareCustomFields']);
+
+                    foreach ($customFields as $cf) {
+                        if (is_array($cf['values'][0])) {
+                            $diff[$cf['name']] = $cf['values'][0]['value'];
+                        } else {
+                            $diff[$cf['name']] = $cf['values'][0];
+                        }
+                    }
+                } else {
+                    if ($newDataValue !== $oldData[$newDataKey]) {
+                        $diff[$newDataKey] = $newDataValue;
+                    }
+                }
+            } else {
+                $diff[$newDataKey] = $newDataValue;
+            }
+
+        }
+
+        return $diff;
+    }
+
+    private function compareTags($a, $b)
+    {
+        return ($a['id'] - $b['id']);
+    }
+
+    private function compareCustomFields(array $a, array $b){
+        if (
+            $a['id'] === $b['id']
+            && (
+                (is_array($a['values'][0]) && $a['values'][0]['value'] === $b['values'][0]['value'])
+                || (!is_array($a['values'][0]) && $a['values'][0] === $b['values'][0])
+            )){
+            return 0;
+        } else {
+            return -1;
+        }
     }
 }

@@ -28,11 +28,11 @@ class UserService
 
     /**
      * @param int $userId
-     * @return string|null
+     * @return string
      */
     public function getUserNameById(int $userId)
     {
-        $userName = null;
+        $userName = '';
 
         try {
             $user = $this->apiClient->users()->getOne($userId);

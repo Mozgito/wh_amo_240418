@@ -4,6 +4,18 @@ controllers:
         namespace: App\Controller
     type: attribute
 
+leadCreate:
+    path: /leadCreate
+    controller: App\Controller\WebhookController::leadCreate
+
 leadUpdate:
     path: /leadUpdate
     controller: App\Controller\WebhookController::leadUpdate
+
+contactCreate:
+    path: /contactCreate
+    controller: App\Controller\WebhookController::contactCreate
+
+contactUpdate:
+    path: /contactUpdate
+    controller: App\Controller\WebhookController::contactUpdate
